@@ -366,24 +366,23 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
         // which verifies the PIN code).
 
         $result = $this->makeRequest(
-            ['v3', 'info', 'token'],
-            [],
-            'GET',
-            ['cat_username' => $username, 'cat_password' => $password]
+            ['v4', 'patrons', 'find'],
+            ['varFieldTag' => 'b', 'varFieldContent' => 'C01338539D', 'fields' => 'id'],
+            'GET'
         );
+		
         if (null === $result) {
             return null;
         }
         if (empty($result['patronId'])) {
-            throw new ILSException('No patronId in token response');
+            throw new ILSException('Failed to get patronId');
         }
         $patronId = $result['patronId'];
 
         $result = $this->makeRequest(
             ['v3', 'patrons', $patronId],
             ['fields' => 'names,emails'],
-            'GET',
-            ['cat_username' => $username, 'cat_password' => $password]
+            'GET'
         );
 
         if (null === $result || !empty($result['code'])) {
@@ -880,14 +879,11 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
         $result = $this->makeRequest(
             ['v4', 'branches', 'pickupLocations'],
             [
-                'limit' => 10000,
-                'offset' => 0,
-                'fields' => 'code,name',
                 'language' => $this->getTranslatorLocale()
             ],
-            'GET',
-            $patron
+            'GET'
         );
+		
         if (isset($result['code'])) {
             // An error was returned
             $this->error(
