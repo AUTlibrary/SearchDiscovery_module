@@ -1,5 +1,5 @@
 <?php
-/**test
+/**
  * III Sierra REST API driver
  *
  * PHP version 7
