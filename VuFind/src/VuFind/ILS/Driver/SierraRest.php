@@ -206,7 +206,7 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
         $this->titleHoldBibLevels
             = !empty($this->config['Holds']['title_hold_bib_levels'])
             ? explode(':', $this->config['Holds']['title_hold_bib_levels'])
-            : ['a', 'b', 'm', 'd'];
+            : ['a', 'b', 's', 'd'];
 
         $this->defaultPickUpLocation
             = isset($this->config['Holds']['defaultPickUpLocation'])
