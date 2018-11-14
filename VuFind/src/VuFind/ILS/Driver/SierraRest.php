@@ -206,7 +206,7 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
         $this->titleHoldBibLevels
             = !empty($this->config['Holds']['title_hold_bib_levels'])
             ? explode(':', $this->config['Holds']['title_hold_bib_levels'])
-            : ['a', 'b', 's', 'd'];
+            : ['a', 'b', 'm', 'd'];
 
         $this->defaultPickUpLocation
             = isset($this->config['Holds']['defaultPickUpLocation'])
@@ -358,26 +358,26 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function patronLogin($username, $password)
+	public function patronLogin($username, $password)
     {
         // We could get the access token and use the token info API, but since we
         // already know the barcode, we can avoid one API call and get the patron
         // information right away (makeRequest renews the access token as necessary
         // which verifies the PIN code).
-
-        $result = $this->makeRequest(
+		$result = $this->makeRequest(
             ['v4', 'patrons', 'find'],
             ['varFieldTag' => 'b', 'varFieldContent' => 'C01338539D', 'fields' => 'id'],
             'GET'
         );
-		
+
         if (null === $result) {
             return null;
         }
-        if (empty($result['patronId'])) {
+        if (empty($result['id'])) {
             throw new ILSException('Failed to get patronId');
         }
-        $patronId = $result['patronId'];
+        $patronId = $result['id'];
+		
 
         $result = $this->makeRequest(
             ['v3', 'patrons', $patronId],
@@ -405,7 +405,7 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
             'college' => null
         ];
     }
-
+	
     /**
      * Check whether the patron is blocked from placing requests (holds/ILL/SRR).
      *
@@ -983,7 +983,7 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
         $itemId = $holdDetails['item_id'] ?? false;
         $comment = $holdDetails['comment'] ?? '';
         $bibId = $holdDetails['id'];
-
+		
         // Convert last interest date from Display Format to Sierra's required format
         try {
             $lastInterestDate = $this->dateConverter->convertFromDisplayDate(
@@ -1013,7 +1013,7 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
             // Hold Date is in the past
             return $this->holdError('hold_date_past');
         }
-
+		
         // Make sure pickup location is valid
         if (!$this->pickUpLocationIsValid($pickUpLocation, $patron, $holdDetails)) {
             return $this->holdError('hold_invalid_pickup');
@@ -1032,8 +1032,7 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
         $result = $this->makeRequest(
             [$comment ? 'v4' : 'v3', 'patrons', $patron['id'], 'holds', 'requests'],
             json_encode($request),
-            'POST',
-            $patron
+            'POST'
         );
 
         if (!empty($result['code'])) {
@@ -1301,7 +1300,7 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
         foreach ($hierarchy as $value) {
             $apiUrl .= '/' . urlencode($value);
         }
-
+		
         // Create proxy request
         $client = $this->createHttpClient($apiUrl);
 
@@ -1873,7 +1872,7 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
     {
         $pickUpLibs = $this->getPickUpLocations($patron, $holdDetails);
         foreach ($pickUpLibs as $location) {
-            if ($location['locationID'] == $pickUpLocation) {
+            if (trim($location['locationID']) == trim($pickUpLocation)) {
                 return true;
             }
         }
@@ -1935,10 +1934,9 @@ class SierraRest extends AbstractBase implements TranslatorAwareInterface,
     protected function getBibRecord($id, $fields, $patron = false)
     {
         return $this->makeRequest(
-            ['v3', 'bibs', $id],
+            ['v4', 'bibs', $id],
             ['fields' => $fields],
-            'GET',
-            $patron
+            'GET'
         );
     }
 }
